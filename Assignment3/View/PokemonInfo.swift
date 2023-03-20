@@ -7,9 +7,9 @@
 
 import SwiftUI
 
-struct PokemonDetail: View {
+struct PokemonInfo: View {
     
-    @ObservedObject var gen = GenerationViewModel()
+    @ObservedObject var gen = PokemonInfoViewModel()
 
     var name : String
     var url : String
@@ -18,7 +18,7 @@ struct PokemonDetail: View {
         VStack {
             Text(name)
             Text(url)
-            Text(String(gen.pokemonGen))
+            Text(String(gen.pokemonIdentify))
             
             List {
                 ForEach(gen.pokemonMoves, id: \.move.name) { move in
@@ -34,6 +34,6 @@ struct PokemonDetail: View {
 
 struct PokemonDetail_Previews: PreviewProvider {
     static var previews: some View {
-        PokemonDetail(name: "Default", url: "URL")
+        PokemonInfo(name: "Default", url: "URL")
     }
 }

@@ -16,7 +16,7 @@ struct Pokemon: View {
             List {
                 ForEach(pokemonvm.pokemonData, id: \.name) { pokemon in
                     NavigationLink {
-                        PokemonDetail(name: pokemon.name, url: pokemon.url)
+                        PokemonInfo(name: pokemon.name, url: pokemon.url)
                     } label: {
                         Text(pokemon.name.capitalized)
                     }
