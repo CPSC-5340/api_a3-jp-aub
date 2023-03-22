@@ -29,9 +29,13 @@ struct PokemonInfo: View {
                 .headerProminence(.increased)
             }
             .listStyle(.insetGrouped)
+            .alert(isPresented: $gen.hasError, error: gen.error, actions: {
+                Text("")
+            })
+            
         }
-        .onAppear {
-            gen.fetchData(input: url)
+        .task {
+            await gen.fetchData(input: url)
         }
     }
 }

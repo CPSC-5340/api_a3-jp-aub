@@ -10,27 +10,43 @@ import Foundation
 class PokemonViewModel : ObservableObject {
     
     @Published private(set) var pokemonData = [PokemonModel]()
+    @Published var hasError = false
+    @Published var error : PokemonViewError?
     
     private let apiUrl = "https://pokeapi.co/api/v2/generation/1/"
     
-    func fetchData() {
+    @MainActor
+    func fetchData() async {
         if let apiUrl = URL(string: apiUrl) {
-            URLSession
-                .shared
-                .dataTask(with: apiUrl) { data, response, error in
-                    if let error = error {
-                        print(error)
-                    } else {
-                        if let data = data {
-                            do {
-                                let results = try JSONDecoder().decode(PokemonResults.self, from: data)
-                                self.pokemonData = results.pokemon_species
-                            } catch {
-                                print(error)
-                            }
-                        }
-                    }
-                }.resume()
+            do {
+                let (data, _) = try await URLSession.shared.data(from: apiUrl)
+                guard let results = try JSONDecoder().decode(PokemonResults?.self, from: data) else {
+                    self.hasError.toggle()
+                    self.error = PokemonViewError.decodeErr
+                    return
+                }
+                self.pokemonData = results.pokemon_species
+            }
+            catch {
+                self.hasError.toggle()
+                self.error = PokemonViewError.customErr(error: error)
+            }
+        }
+    }
+}
+
+extension PokemonViewModel {
+    enum PokemonViewError : LocalizedError {
+        case decodeErr
+        case customErr(error: Error)
+        
+        var errorDescription: String? {
+            switch self {
+            case .decodeErr:
+                return "There is a decoding error"
+            case .customErr(let error):
+                return error.localizedDescription
+            }
         }
     }
 }

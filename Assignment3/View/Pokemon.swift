@@ -24,9 +24,12 @@ struct Pokemon: View {
             }
             .listStyle(.grouped)
             .navigationTitle("First Gen Pokemon")
+            .alert(isPresented: $pokemonvm.hasError, error: pokemonvm.error, actions: {
+                Text("")
+            })
         }
-        .onAppear {
-            pokemonvm.fetchData()
+        .task {
+            await pokemonvm.fetchData()
         }
     }
 }

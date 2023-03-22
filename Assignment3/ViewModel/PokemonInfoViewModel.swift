@@ -11,51 +11,67 @@ class PokemonInfoViewModel : ObservableObject {
     
     @Published private(set) var pokemonIdentify = Int()
     @Published private(set) var pokemonMoves = [PokemonMovesModel]()
+    @Published var hasError = false
+    @Published var error : PokemonInfoViewError?
     
-    func fetchData(input: String) {
+    @MainActor
+    func fetchData(input: String) async {
         if let apiUrl = URL(string: input) {
-            URLSession
-                .shared
-                .dataTask(with: apiUrl) { data, response, error in
-                    if let error = error {
-                        print(error)
-                    } else {
-                        if let data = data {
-                            do {
-                                let results = try JSONDecoder().decode(GenResults.self, from: data)
-                                self.pokemonIdentify = results.id
-                                
-                                // Using the ID from the first API call, call the endpoint containing
-                                // that pokemon's list of moves:
-                                self.fetchMoves()
-                            } catch {
-                                print(error)
-                            }
-                        }
-                    }
-                }.resume()
+            do {
+                let (data, _) = try await URLSession.shared.data(from: apiUrl)
+                guard let results = try JSONDecoder().decode(GenResults?.self, from: data) else {
+                    self.hasError.toggle()
+                    self.error = PokemonInfoViewError.decodeErr
+                    return
+                }
+                self.pokemonIdentify = results.id
+                
+                // Using the ID from the first API call, call the endpoint containing that pokemon's list of moves:
+                await self.fetchMoves()
+                
+            }
+            catch {
+                self.hasError.toggle()
+                self.error = PokemonInfoViewError.customErr(error: error)
+            }
         }
     }
     
-    func fetchMoves() {
+    @MainActor
+    func fetchMoves() async {
         let pID = String(self.pokemonIdentify)
         if let apiUrl = URL(string: "https://pokeapi.co/api/v2/pokemon/\(pID)/") {
-            URLSession
-                .shared
-                .dataTask(with: apiUrl) { data, response, error in
-                    if let error = error {
-                        print(error)
-                    } else {
-                        if let data = data {
-                            do {
-                                let results = try JSONDecoder().decode(PokemonDetailsResults.self, from: data)
-                                self.pokemonMoves = results.moves
-                            } catch {
-                                print(error)
-                            }
-                        }
-                    }
-                }.resume()
+            do {
+                let (data, _) = try await URLSession.shared.data(from: apiUrl)
+                guard let results = try JSONDecoder().decode(PokemonDetailsResults?.self, from: data) else {
+                    self.hasError.toggle()
+                    self.error = PokemonInfoViewError.decodeErr
+                    return
+                }
+                self.pokemonMoves = results.moves
+            }
+            catch {
+                self.hasError.toggle()
+                self.error = PokemonInfoViewError.customErr(error: error)
+            }
+            
+        }
+    }
+}
+
+
+extension PokemonInfoViewModel {
+    enum PokemonInfoViewError : LocalizedError {
+        case decodeErr
+        case customErr(error: Error)
+        
+        var errorDescription: String? {
+            switch self {
+            case .decodeErr:
+                return "There is a decoding error"
+            case .customErr(let error):
+                return error.localizedDescription
+            }
         }
     }
 }
