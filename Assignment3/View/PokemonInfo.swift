@@ -16,15 +16,19 @@ struct PokemonInfo: View {
     
     var body: some View {
         VStack {
-            Text(name)
-            Text(url)
-            Text(String(gen.pokemonIdentify))
+            Text(name.capitalized)
+                .font(.largeTitle)
+                .underline(color: .gray)
             
             List {
-                ForEach(gen.pokemonMoves, id: \.move.name) { move in
-                    Text(move.move.name)
+                Section(header: Text("Moves")) {
+                    ForEach(gen.pokemonMoves, id: \.move.name) { move in
+                        Text(move.move.name.capitalized)
+                    }
                 }
+                .headerProminence(.increased)
             }
+            .listStyle(.insetGrouped)
         }
         .onAppear {
             gen.fetchData(input: url)
